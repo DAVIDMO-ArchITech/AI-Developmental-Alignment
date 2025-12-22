@@ -56,7 +56,7 @@ except ImportError:
 # ---------------------------
 
 DEFAULT_MODEL = "gpt2"  # 124M params - more realistic than tiny-gpt2
-SEED = 1337  # Original seed for reproducibility
+SEED = 1337
 
 # Enhanced refusal detection patterns
 REFUSAL_PATTERNS = [
@@ -729,4 +729,88 @@ def main():
 
     # Compile results
     var_a = [c["variance"] for c in eval_a["clusters"]]
-    var_b = [c["
+    var_b = [c["variance"] for c in eval_b["clusters"]]
+
+    out_json = {
+        "meta": {
+            "base_model": args.model,
+            "seed": SEED,
+            "paraphrases_per_cluster": args.paraphrases,
+            "device": args.device,
+            "total_epochs": args.total_epochs,
+            "training_schedule": {
+                "variant_a": f"{epochs_a_mixed:.2f} mixed + {epochs_a_refusal:.2f} refusal",
+                "variant_b": f"{epochs_b_safe:.2f} safe + {epochs_b_refusal:.2f} refusal + {epochs_b_mixed:.2f} mixed",
+            }
+        },
+        "variant_a": eval_a,
+        "variant_b": eval_b,
+        "statistical_tests": stats_result,
+        "summary": {
+            "avg_variance_a": eval_a["avg_variance"],
+            "std_variance_a": eval_a["std_variance"],
+            "avg_variance_b": eval_b["avg_variance"],
+            "std_variance_b": eval_b["std_variance"],
+            "variance_reduction": float((eval_a["avg_variance"] - eval_b["avg_variance"]) / eval_a["avg_variance"] * 100) if eval_a["avg_variance"] > 0 else 0.0,
+            "variance_ratio_a_over_b": float(eval_a["avg_variance"] / eval_b["avg_variance"]) if eval_b["avg_variance"] > 0 else None,
+            "avg_mean_refusal_a": eval_a["avg_mean_refusal"],
+            "avg_mean_refusal_b": eval_b["avg_mean_refusal"],
+        }
+    }
+
+    # Save results
+    json_path = os.path.join(args.outdir, "results.json")
+    try:
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(out_json, f, indent=2)
+        print(f"\nSaved results: {json_path}")
+    except Exception as e:
+        print(f"ERROR saving results: {e}")
+
+    # Create visualization
+    plot_path = os.path.join(args.outdir, "variance_plot.png")
+    try:
+        plot_variances(var_a, var_b, stats_result, plot_path)
+    except Exception as e:
+        print(f"ERROR creating plot: {e}")
+
+    # Print summary
+    print(f"\n{'='*60}")
+    print("RESULTS SUMMARY")
+    print(f"{'='*60}")
+    print(f"\nVariant A (Post-hoc):")
+    print(f"  Avg variance: {eval_a['avg_variance']:.4f} ± {eval_a['std_variance']:.4f}")
+    print(f"  Avg refusal rate: {eval_a['avg_mean_refusal']:.3f} ± {eval_a['std_mean_refusal']:.3f}")
+    
+    print(f"\nVariant B (Developmental):")
+    print(f"  Avg variance: {eval_b['avg_variance']:.4f} ± {eval_b['std_variance']:.4f}")
+    print(f"  Avg refusal rate: {eval_b['avg_mean_refusal']:.3f} ± {eval_b['std_mean_refusal']:.3f}")
+    
+    print(f"\nComparison:")
+    print(f"  Variance reduction: {out_json['summary']['variance_reduction']:.1f}%")
+    if out_json["summary"]["variance_ratio_a_over_b"]:
+        print(f"  Variance ratio (A/B): {out_json['summary']['variance_ratio_a_over_b']:.2f}x")
+    
+    print(f"\nStatistical Tests:")
+    vc = stats_result["variance_comparison"]
+    print(f"  Paired t-test (variance): t={vc['t_statistic']:.3f}, p={vc['p_value']:.4f}")
+    print(f"  Cohen's d: {vc['cohens_d']:.3f}")
+    print(f"  Result: {'SIGNIFICANT' if vc['significant'] else 'Not significant'} at α=0.05")
+    
+    print(f"\n{'='*60}")
+    print(f"Output files:")
+    print(f"  - {json_path}")
+    print(f"  - {plot_path}")
+    print(f"  - Model checkpoints in {args.outdir}/variant_{{a,b}}/")
+    print(f"{'='*60}\n")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\nInterrupted by user. Exiting...")
+    except Exception as e:
+        print(f"\n\nFATAL ERROR: {e}")
+        import traceback
+        traceback.print_exc()
