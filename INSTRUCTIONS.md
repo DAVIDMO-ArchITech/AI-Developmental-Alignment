@@ -76,279 +76,126 @@ pip install torch transformers datasets peft matplotlib
 
 ```
 
+## Running the Developmental Alignment Experiment
 
-
-Basic Run (CPU, Default Settings)
-
-
+### Basic Run (CPU, Default Settings)
 
 Runs the full experiment on CPU using default parameters.
 
-
-
-python fixed\_alignment.py
-
-
-
-
+```bash
+python fixed_alignment.py
+```
 
 Recommended for:
+- Verification
+- Reproducibility checks
+- Low-resource environments
 
+---
 
-
-Verification
-
-
-
-Reproducibility checks
-
-
-
-Low-resource environments
-
-
-
-Full Run (GPU, Higher Fidelity)
-
-
+### Full Run (GPU, Higher Fidelity)
 
 Runs the experiment on GPU with increased paraphrase coverage and mixed-precision training.
 
-
-
-python fixed\_alignment.py --device cuda --paraphrases 20 --total\_epochs 6 --fp16
-
-
-
-
+```bash
+python fixed_alignment.py --device cuda --paraphrases 20 --total_epochs 6 --fp16
+```
 
 Recommended for:
+- Stronger statistical signal
+- Clearer variance separation
+- Review or presentation artifacts
 
+---
 
-
-Stronger statistical signal
-
-
-
-Clearer variance separation
-
-
-
-Review or presentation artifacts
-
-
-
-Quick Test (Smaller Model)
-
-
+### Quick Test (Smaller Model)
 
 Uses a smaller base model for faster iteration.
 
-
-
-python fixed\_alignment.py --model distilgpt2 --total\_epochs 2
-
-
-
-
+```bash
+python fixed_alignment.py --model distilgpt2 --total_epochs 2
+```
 
 Recommended for:
+- Sanity checks
+- Debugging
+- CI-style validation
 
+---
 
+## What the Code Does
 
-Sanity checks
+### Setup Phase
 
+- Loads a pre-trained language model (default: GPT-2, 124M parameters)
+- Applies LoRA adapters for efficient fine-tuning
+- Creates three datasets:
+  - Safe: helpful, harmless queries
+  - Refusal: unsafe queries with refusal responses
+  - Mixed: safe + refusal combined and shuffled
 
+---
 
-Debugging
-
-
-
-CI-style validation
-
-
-
-What the Code Does
-
-Setup Phase
-
-
-
-Loads a pre-trained language model (default: GPT-2, 124M parameters)
-
-
-
-Applies LoRA adapters for efficient fine-tuning
-
-
-
-Creates three datasets:
-
-
-
-Safe: helpful, harmless queries
-
-
-
-Refusal: unsafe queries with refusal responses
-
-
-
-Mixed: safe + refusal combined and shuffled
-
-
-
-Training Phase
-
-
+### Training Phase
 
 Variant A — Post-Hoc Alignment
-
-
-
-Mixed training (safe + refusal together)
-
-
-
-Late-stage refusal-only patch
-
-
+- Mixed training (safe + refusal together)
+- Late-stage refusal-only patch
 
 Variant B — Developmental Alignment
-
-
-
-Safe-only training (establish helpful behavior)
-
-
-
-Refusal-only training (establish safety boundary)
-
-
-
-Mixed training (integration after stability)
-
-
+- Safe-only training (establish helpful behavior)
+- Refusal-only training (establish safety boundary)
+- Mixed training (integration after stability)
 
 Both variants use equal total training budgets.
 
+---
 
+## Evaluation
 
-Evaluation
-
-
-
-Generates multiple paraphrases per unsafe intent
-
-
-
-Runs all paraphrases through both models
-
-
-
-Uses regex-based detection to classify responses:
-
-
-
-1 = refused
-
-
-
-0 = complied
-
-
-
-Computes variance across paraphrases for each intent
-
-
+- Generates multiple paraphrases per unsafe intent
+- Runs all paraphrases through both models
+- Uses regex-based detection to classify responses:
+  - 1 = refused
+  - 0 = complied
+- Computes variance across paraphrases for each intent
 
 Lower variance indicates more stable, robust alignment.
 
+---
 
-
-Outputs
-
-
+## Outputs
 
 Each run produces:
+- results.json  
+  - Per-intent refusal variance  
+  - Mean variance per variant  
+  - Summary statistics
+- variance_plot.png  
+  - Visual comparison of alignment stability
+- Console output  
+  - Mean variance comparison  
+  - Clear indication of which variant is more stable
 
+---
 
+## Reproducibility Notes
 
-results.json
+- Deterministic random seeds are used by default
+- Evaluation is deterministic (do_sample = False)
+- Only the training order differs between variants
 
+---
 
+## Notes on Scope
 
-Per-intent refusal variance
+- This experiment is intentionally scale-independent
+- It does not claim to solve alignment
+- It demonstrates a structural effect: formative training reduces behavioral instability earlier than post-hoc correction
+- The same logic applies to larger models and datasets
 
+---
 
-
-Mean variance per variant
-
-
-
-Summary statistics
-
-
-
-variance\_plot.png
-
-
-
-Visual comparison of alignment stability
-
-
-
-Console Output
-
-
-
-Mean variance comparison
-
-
-
-Clear indication of which variant is more stable
-
-
-
-Reproducibility Notes
-
-
-
-Deterministic random seeds are used by default
-
-
-
-Evaluation is deterministic (do\_sample = False)
-
-
-
-Only the training order differs between variants
-
-
-
-Notes on Scope
-
-
-
-This experiment is intentionally scale-independent.
-
-
-
-It does not claim to solve alignment.
-
-It demonstrates a structural effect: formative training reduces behavioral instability earlier than post-hoc correction.
-
-
-
-The same logic applies to larger models and datasets.
-
-
-
-Status
-
-
+## Status
 
 This repository supports an unfunded research project prepared for evaluation, replication, and discussion.
-
-
-
