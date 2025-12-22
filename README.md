@@ -63,5 +63,14 @@ It is an **assurance claim**.
 
 ---
 
-## Repository Structure
+## Quick Start 
+
+# Install dependencies
+pip install torch transformers datasets peft scipy matplotlib
+
+# Run the experiment (CPU mode, will take ~30-60 min)
+python developmental_alignment.py
+
+# Or GPU mode if you have CUDA
+python developmental_alignment.py --device cuda --fp16
 
