@@ -352,21 +352,3 @@ This repository supports an unfunded research project prepared for evaluation, r
 
 
 
-
-
----
-
-
-
-If you want next:
-
-\- a \*\*CITATION.cff\*\*
-
-\- a \*\*REPRODUCIBILITY.md\*\*
-
-\- or a one-line link added to the README pointing here
-
-
-
-Confidence this is exactly what you asked for: \*\*100/100\*\*
-
