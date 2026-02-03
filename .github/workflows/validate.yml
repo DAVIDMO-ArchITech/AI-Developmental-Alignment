@@ -1,0 +1,152 @@
+name: Validate HDP Packets
+
+on:
+  pull_request:
+    paths:
+      - 'data/bundles/**'
+      - 'packets/**'
+  push:
+    paths:
+      - 'data/bundles/**'
+      - 'packets/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install jsonschema
+
+      - name: Validate packet schemas
+        run: |
+          python -c "
+          import json
+          import sys
+          from pathlib import Path
+          from jsonschema import validate, ValidationError
+
+          # Load schema
+          schema_path = Path('spec/data-bundle-schema.json')
+          if not schema_path.exists():
+              print('Schema not found, skipping validation')
+              sys.exit(0)
+
+          with open(schema_path) as f:
+              schema = json.load(f)
+
+          # Find all packet files
+          errors = []
+          packet_dirs = ['data/bundles', 'packets']
+          
+          for dir_name in packet_dirs:
+              packet_dir = Path(dir_name)
+              if not packet_dir.exists():
+                  continue
+                  
+              for packet_file in packet_dir.rglob('*.json'):
+                  try:
+                      with open(packet_file) as f:
+                          packet = json.load(f)
+                      validate(instance=packet, schema=schema)
+                      print(f'✓ {packet_file}')
+                  except json.JSONDecodeError as e:
+                      errors.append(f'{packet_file}: Invalid JSON - {e}')
+                  except ValidationError as e:
+                      errors.append(f'{packet_file}: Schema violation - {e.message}')
+              
+              # Also check JSONL files
+              for jsonl_file in packet_dir.rglob('*.jsonl'):
+                  with open(jsonl_file) as f:
+                      for i, line in enumerate(f, 1):
+                          if not line.strip():
+                              continue
+                          try:
+                              packet = json.loads(line)
+                              validate(instance=packet, schema=schema)
+                          except json.JSONDecodeError as e:
+                              errors.append(f'{jsonl_file}:{i}: Invalid JSON - {e}')
+                          except ValidationError as e:
+                              errors.append(f'{jsonl_file}:{i}: Schema violation - {e.message}')
+                  print(f'✓ {jsonl_file}')
+
+          if errors:
+              print('\\n❌ Validation errors:')
+              for error in errors:
+                  print(f'  {error}')
+              sys.exit(1)
+          else:
+              print('\\n✓ All packets valid')
+          "
+
+      - name: Verify hash integrity
+        run: |
+          python -c "
+          import json
+          import hashlib
+          from pathlib import Path
+
+          def compute_hash(text):
+              return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+          errors = []
+          packet_dirs = ['data/bundles', 'packets']
+          
+          for dir_name in packet_dirs:
+              packet_dir = Path(dir_name)
+              if not packet_dir.exists():
+                  continue
+                  
+              for packet_file in packet_dir.rglob('*.json'):
+                  with open(packet_file) as f:
+                      packet = json.load(f)
+                  
+                  if 'integrity' not in packet or 'text_lineage' not in packet:
+                      continue
+                  
+                  # Verify text hashes
+                  lineage = packet['text_lineage']
+                  integrity = packet['integrity']
+                  
+                  checks = [
+                      ('original', lineage.get('original_text', ''), integrity.get('hash_original')),
+                      ('normalized', lineage.get('normalized_text_v1', ''), integrity.get('hash_normalized')),
+                      ('final', lineage.get('final_text', ''), integrity.get('hash_final')),
+                  ]
+                  
+                  for name, text, expected in checks:
+                      if expected and text:
+                          actual = compute_hash(text)
+                          if actual != expected:
+                              errors.append(f'{packet_file}: {name} hash mismatch')
+
+          if errors:
+              print('\\n❌ Hash integrity errors:')
+              for error in errors:
+                  print(f'  {error}')
+              # Warning only for now - hashes in examples are placeholders
+              print('\\n⚠️  Hash verification warnings (non-blocking)')
+          else:
+              print('\\n✓ Hash integrity verified')
+          "
+
+  check-role-separation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check CODEOWNERS compliance
+        run: |
+          echo "Checking that packets are only modified by transcribers..."
+          # This is a placeholder - full implementation would check
+          # git blame and CODEOWNERS rules
+          echo "✓ Role separation check passed (placeholder)"

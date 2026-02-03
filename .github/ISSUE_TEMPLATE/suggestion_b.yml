@@ -1,0 +1,110 @@
+name: "Suggestion B - Blind Edit Proposal"
+description: "Submit edit suggestions as Suggester B (blind to Suggester A)"
+title: "[Suggestion B] "
+labels: ["suggestion-B", "hdp-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Holy Data Protocol - Blind Suggestion
+        
+        You are submitting as **Suggester B**. You should NOT have seen any suggestions from Suggester A.
+        
+        If you have seen A's suggestions, please stop and contact an administrator.
+
+  - type: input
+    id: segment_id
+    attributes:
+      label: Segment ID
+      description: "The unique identifier for the segment you're editing"
+      placeholder: "e.g., seg_0001"
+    validations:
+      required: true
+
+  - type: input
+    id: normalized_hash
+    attributes:
+      label: Normalized Text Hash (first 8 chars)
+      description: "First 8 characters of the SHA-256 hash of normalized_text_v1"
+      placeholder: "e.g., a1b2c3d4"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: diff_operation
+    attributes:
+      label: Operation Type
+      options:
+        - insert
+        - delete
+        - replace
+    validations:
+      required: true
+
+  - type: input
+    id: start_offset
+    attributes:
+      label: Start Offset
+      description: "Character position where the change starts (0-indexed)"
+      placeholder: "e.g., 0"
+    validations:
+      required: true
+
+  - type: input
+    id: end_offset
+    attributes:
+      label: End Offset
+      description: "Character position where the change ends (0-indexed)"
+      placeholder: "e.g., 47"
+    validations:
+      required: true
+
+  - type: input
+    id: anchor_before
+    attributes:
+      label: Anchor Before
+      description: "Short text immediately before your change (for verification)"
+      placeholder: "e.g., 'The '"
+    validations:
+      required: false
+
+  - type: input
+    id: anchor_after
+    attributes:
+      label: Anchor After
+      description: "Short text immediately after your change (for verification)"
+      placeholder: "e.g., ' was'"
+    validations:
+      required: false
+
+  - type: textarea
+    id: proposed_text
+    attributes:
+      label: Proposed Text
+      description: "For insert/replace: the new text. For delete: leave blank."
+      placeholder: "Enter your proposed replacement or insertion text"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: suggested_reason_codes
+    attributes:
+      label: Suggested Reason Codes
+      description: "Select all that apply (adjudicators make final decision)"
+      options:
+        - label: "clarity - Improves readability or reduces ambiguity"
+        - label: "factual_correction - Fixes verifiable factual errors"
+        - label: "bias_reduction - Removes loaded language or hidden assumptions"
+        - label: "redundancy - Eliminates unnecessary repetition"
+        - label: "intent_preservation - Maintains original meaning"
+
+  - type: checkboxes
+    id: blind_confirmation
+    attributes:
+      label: Blind Confirmation
+      description: "Required confirmation"
+      options:
+        - label: "I have NOT seen Suggester A's proposals for this segment"
+          required: true
+        - label: "I have NOT communicated with Suggester A about this segment"
+          required: true

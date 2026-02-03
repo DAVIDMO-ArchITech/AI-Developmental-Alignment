@@ -1,0 +1,306 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/DAVIDMO-ArchITech/AI-Developmental-Alignment/spec/data-bundle-schema.json",
+  "title": "Closed Segment Packet",
+  "description": "Holy Data Protocol v0.1 - Immutable training data bundle with full lineage",
+  "type": "object",
+  "required": [
+    "identity",
+    "text_lineage",
+    "suggestions",
+    "adjudication",
+    "integrity",
+    "provenance"
+  ],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "required": ["dataset_id", "document_id", "segment_id", "segment_order", "created_utc", "closed_utc"],
+      "properties": {
+        "dataset_id": {
+          "type": "string",
+          "description": "Unique identifier for the dataset"
+        },
+        "document_id": {
+          "type": "string",
+          "description": "Unique identifier for the source document"
+        },
+        "segment_id": {
+          "type": "string",
+          "description": "Unique, stable identifier for this segment (never reused)"
+        },
+        "segment_order": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Position of segment within document"
+        },
+        "created_utc": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO8601 timestamp when segment was created"
+        },
+        "closed_utc": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO8601 timestamp when packet was finalized"
+        }
+      }
+    },
+    "text_lineage": {
+      "type": "object",
+      "required": ["original_text", "normalized_text_v1", "final_text"],
+      "properties": {
+        "original_text": {
+          "type": "string",
+          "description": "Exact original text, unmodified"
+        },
+        "normalized_text_v1": {
+          "type": "string",
+          "description": "Text after normalization pass"
+        },
+        "final_text": {
+          "type": "string",
+          "description": "Final accepted text after adjudication"
+        }
+      }
+    },
+    "suggestions": {
+      "type": "object",
+      "required": ["suggestion_A_diffs", "suggestion_B_diffs"],
+      "properties": {
+        "suggestion_A_diffs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/diff_item" },
+          "description": "Diffs proposed by Suggester A"
+        },
+        "suggestion_B_diffs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/diff_item" },
+          "description": "Diffs proposed by Suggester B"
+        }
+      }
+    },
+    "adjudication": {
+      "type": "object",
+      "required": ["decision_log", "intent_class", "normalization_ruleset_version", "adjudication_ruleset_version"],
+      "properties": {
+        "decision_log": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/decision_item" },
+          "description": "Record of all adjudication decisions"
+        },
+        "intent_class": {
+          "type": "string",
+          "enum": ["informative", "persuasive", "speculative", "narrative"],
+          "description": "Classification of original text intent"
+        },
+        "normalization_ruleset_version": {
+          "type": "string",
+          "description": "Version of normalization rules applied"
+        },
+        "adjudication_ruleset_version": {
+          "type": "string",
+          "description": "Version of adjudication rules applied"
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "required": ["hash_original", "hash_normalized", "hash_suggestion_A", "hash_suggestion_B", "hash_final", "hash_packet"],
+      "properties": {
+        "hash_original": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of original_text"
+        },
+        "hash_normalized": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of normalized_text_v1"
+        },
+        "hash_suggestion_A": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of suggestion_A_diffs (serialized)"
+        },
+        "hash_suggestion_B": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of suggestion_B_diffs (serialized)"
+        },
+        "hash_final": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of final_text"
+        },
+        "hash_packet": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of entire packet (excluding this field)"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["author_ref", "normalizer_team_ref", "suggester_A_ref", "suggester_B_ref", "adjudicator_team_ref", "transcriber_1_ref", "transcriber_2_ref"],
+      "properties": {
+        "author_ref": {
+          "type": "string",
+          "description": "Pseudonymous identifier for original author"
+        },
+        "normalizer_team_ref": {
+          "type": "string",
+          "description": "Pseudonymous identifier for normalization team"
+        },
+        "suggester_A_ref": {
+          "type": "string",
+          "description": "Pseudonymous identifier for Suggester A"
+        },
+        "suggester_B_ref": {
+          "type": "string",
+          "description": "Pseudonymous identifier for Suggester B"
+        },
+        "adjudicator_team_ref": {
+          "type": "string",
+          "description": "Pseudonymous identifier for adjudication team"
+        },
+        "transcriber_1_ref": {
+          "type": "string",
+          "description": "Pseudonymous identifier for first transcriber"
+        },
+        "transcriber_2_ref": {
+          "type": "string",
+          "description": "Pseudonymous identifier for second transcriber"
+        }
+      }
+    },
+    "correction": {
+      "type": "object",
+      "description": "Present only if this packet corrects a previous one",
+      "properties": {
+        "supersedes_packet_id": {
+          "type": "string",
+          "description": "ID of the packet this one replaces"
+        },
+        "correction_reason": {
+          "type": "string",
+          "enum": ["transcription_error", "ruleset_bug", "discovered_fact_error", "other"],
+          "description": "Why the correction was needed"
+        },
+        "correction_notes": {
+          "type": "string",
+          "description": "Optional explanation"
+        }
+      },
+      "required": ["supersedes_packet_id", "correction_reason"]
+    }
+  },
+  "definitions": {
+    "diff_item": {
+      "type": "object",
+      "required": ["diff_id", "op", "start_offset", "end_offset", "proposer_id"],
+      "properties": {
+        "diff_id": {
+          "type": "string",
+          "description": "Unique identifier for this diff"
+        },
+        "op": {
+          "type": "string",
+          "enum": ["insert", "delete", "replace"],
+          "description": "Type of operation"
+        },
+        "start_offset": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Start position in normalized_text_v1"
+        },
+        "end_offset": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "End position in normalized_text_v1"
+        },
+        "anchor_before": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Short context string before the span (for validation)"
+        },
+        "anchor_after": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Short context string after the span (for validation)"
+        },
+        "new_text": {
+          "type": "string",
+          "description": "Replacement text (for insert/replace operations)"
+        },
+        "proposer_id": {
+          "type": "string",
+          "enum": ["A", "B"],
+          "description": "Which suggester proposed this diff"
+        }
+      }
+    },
+    "decision_item": {
+      "type": "object",
+      "required": ["decision_item_id", "target_span", "proposal_source", "action", "reason_codes", "vote_tally"],
+      "properties": {
+        "decision_item_id": {
+          "type": "string",
+          "description": "Unique identifier for this decision"
+        },
+        "target_span": {
+          "type": "object",
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": "integer", "minimum": 0 },
+            "end": { "type": "integer", "minimum": 0 }
+          },
+          "description": "Span in normalized_text_v1 affected by this decision"
+        },
+        "proposal_source": {
+          "type": "string",
+          "enum": ["A", "B", "both", "Team2_mod"],
+          "description": "Origin of the proposed change"
+        },
+        "action": {
+          "type": "string",
+          "enum": ["accept", "reject", "accept_with_modification"],
+          "description": "Adjudication outcome"
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "clarity",
+              "factual_correction",
+              "bias_reduction",
+              "redundancy",
+              "intent_preservation",
+              "safety",
+              "formatting",
+              "style_consistency",
+              "scope_control",
+              "ambiguity_resolution"
+            ]
+          },
+          "minItems": 1,
+          "description": "Justification tags for the decision"
+        },
+        "vote_tally": {
+          "type": "object",
+          "properties": {
+            "accept": { "type": "integer", "minimum": 0 },
+            "reject": { "type": "integer", "minimum": 0 },
+            "abstain": { "type": "integer", "minimum": 0 }
+          },
+          "description": "Vote counts from adjudication team"
+        },
+        "modification_text": {
+          "type": "string",
+          "description": "Team2's modified version (only if action is accept_with_modification)"
+        }
+      }
+    }
+  }
+}

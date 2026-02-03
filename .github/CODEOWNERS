@@ -1,0 +1,20 @@
+# CODEOWNERS for Developmental Alignment Repository
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+* @DAVIDMO-ArchITech
+
+# Canonical data packets - only transcribers can merge
+# (Add team when available: @org/transcribers-team)
+/data/bundles/ @DAVIDMO-ArchITech
+/data/gold/ @DAVIDMO-ArchITech
+/packets/ @DAVIDMO-ArchITech
+
+# Specifications - require core admin review
+/spec/ @DAVIDMO-ArchITech
+
+# GitHub configuration - admin only
+/.github/ @DAVIDMO-ArchITech
+
+# Experiments can be more open (research contributions)
+/experiments/ @DAVIDMO-ArchITech
